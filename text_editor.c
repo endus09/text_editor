@@ -1,0 +1,6 @@
+// by Markus Gulla
+
+main()
+{
+
+}
