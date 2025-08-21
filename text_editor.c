@@ -65,23 +65,18 @@ char editorReadKey()
 
 int cursorPosition(uint16_t *rows, uint16_t *columns)
 {
-char buf[32];
+    char buf[32];
+    uint8_t i = 0;
 
     if(write(STDOUT_FILENO, "\x1b[6n", 4) != 4) {return -1;}
 
-    for(uint8_t i = 0; i < sizeof(buf) - 1; i++)
+    while( i < sizeof(buf) - 1)
     {
-        if(read(STDIN_FILENO, &buf[i], 1) != 1) 
-        {
-            buf[i+1] = '\0';
-            break;
-        }
-        if(buf[i] == 'R')
-        {
-            buf[i+1] = '\0';
-            break;
-        }
+        if(read(STDIN_FILENO, &buf[i], 1) != 1) {break;}
+        if(buf[i] == 'R'){break;}
+        i++;
     }
+    buf[i] = '\0';
 
     printf("\r\n");
 
