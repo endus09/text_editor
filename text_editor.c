@@ -210,7 +210,7 @@ void processKeypress()
 // init
 void initEditor()
 {
-    if(getWinSize(&e.screen_rows, &e.screen_rows) == -1){die("getWinSize");}
+    if(getWinSize(&e.screen_rows, &e.screen_columns) == -1){die("getWinSize");}
 }
 
 int main()
