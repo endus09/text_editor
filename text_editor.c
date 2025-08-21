@@ -71,10 +71,17 @@ char buf[32];
 
     for(uint8_t i = 0; i < sizeof(buf) - 1; i++)
     {
-        if(read(STDIN_FILENO, &buf[i], 1) != 1) {break;}
-        if(buf[i] == 'R') {break;}
+        if(read(STDIN_FILENO, &buf[i], 1) != 1) 
+        {
+            buf[i+1] = '\0';
+            break;
+        }
+        if(buf[i] == 'R')
+        {
+            buf[i+1] = '\0';
+            break;
+        }
     }
-    buf[sizeof(buf)] = '\0';
 
     printf("\r\n");
 
