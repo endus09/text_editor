@@ -52,11 +52,18 @@ char editorReadKey()
     }
 }
 
+// output
+void refreshScreen()
+{
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+}
+
 // input
-void editorProcessKeypress()
+void processKeypress()
 {
     char c = editorReadKey();
     
+    printf("%d (%c)",c,c);
     switch(c)
     {
         case CTRL_KEY('q'):
@@ -72,21 +79,8 @@ int main()
 
     while (1)
     {
-        char c = '\0';
-
-        if(read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) {die("read");}
-
-        read(STDIN_FILENO, &c, 1);
-
-        if(iscntrl(c))
-        {
-            printf("%d\r\n", c);
-        }
-        else
-        {
-            printf("%d ('%c')\r\n", c, c);
-        }
-        if(c == CTRL_KEY('q')){break;}
+        refreshScreen();
+        processKeypress();
     }
     return 0;
 }
