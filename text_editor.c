@@ -19,6 +19,7 @@
 // data
 struct config
 {
+    uint16_t cx, cy;
     uint16_t screen_rows;
     uint16_t screen_columns;
     struct termios orig_termios;
@@ -58,7 +59,7 @@ void rawToggleEnable()
 
 char editorReadKey()
 {
-    int nread;
+    int64_t nread;
     char c;
     while((nread = read(STDIN_FILENO, &c, 1)) != 1)
     {
@@ -184,7 +185,10 @@ void refreshScreen()
 
     drawRows(&ab);
 
-    abAppend(&ab, "\x1b[H", 3);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", e.cy +1, e.cx + 1);
+    abAppend(&ab, buf, strlen(buf));
+
     abAppend(&ab, "\x1b[?25h", 6);
 
     write(STDOUT_FILENO, ab.b, ab.len);
@@ -210,6 +214,8 @@ void processKeypress()
 // init
 void initEditor()
 {
+    e.cx = 0;
+    e.cy = 0;
     if(getWinSize(&e.screen_rows, &e.screen_columns) == -1){die("getWinSize");}
 }
 
