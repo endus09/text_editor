@@ -7,12 +7,20 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdint.h>
+#include <sys/ioctl.h>
 
 // defines
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 // data
-struct termios orig_termios;
+struct config{
+    uint16_t screen_rows;
+    uint16_t screen_columns;
+    struct termios orig_termios;
+};
+
+struct config e;
 
 // terminal
 void die(const char *s)
@@ -25,15 +33,15 @@ void die(const char *s)
 
 void rawToggleDisable()
 {
-   if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) {die("tcsetattr");}
+   if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &e.orig_termios) == -1) {die("tcsetattr");}
 }
 
 void rawToggleEnable()
 {
-    if(tcgetattr(STDIN_FILENO, &orig_termios) == -1) {die("tcgetattr");}
+    if(tcgetattr(STDIN_FILENO, &e.orig_termios) == -1) {die("tcgetattr");}
     atexit(rawToggleDisable);
 
-    struct termios raw = orig_termios;
+    struct termios raw = e.orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
     raw.c_cflag |= (CS8);
@@ -55,10 +63,38 @@ char editorReadKey()
     return c;
 }
 
+int getWinSize(int *rows, int *columns)
+{
+    struct winsize ws;
+
+    if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+    {
+        return -1;
+    }
+    else
+    {
+        *columns = ws.ws_col;
+        *rows = ws.ws_row;
+        return 0;
+    }
+}
+
 // output
+void drawRows()
+{
+    for(uint8_t i = 0; i < e.screen_columns; i++)
+    {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
+}
+
 void refreshScreen()
 {
     write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+
+    drawRows();
+
     write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
@@ -79,9 +115,15 @@ void processKeypress()
 }
 
 // init
+void initEditor()
+{
+    if(getWinSize(&e.screen_rows, &e.screen_rows) == -1){die("getWinSize");}
+}
+
 int main()
 {
     rawToggleEnable();
+    initEditor();
 
     while (1)
     {
