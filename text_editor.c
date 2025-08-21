@@ -12,6 +12,8 @@
 #include <string.h>
 
 // defines
+#define TEXT_EDITOR_VERSION "0.0.1"
+
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 // data
@@ -134,7 +136,37 @@ void drawRows(struct abuf *ab)
 {
     for(uint8_t i = 0; i < e.screen_rows; i++)
     {
+        if(i == e.screen_rows/3)
+        {
+            char welcome[80];
+            uint16_t welcomelen = snprintf(welcome, sizeof(welcome),
+                "text editor --version %s", TEXT_EDITOR_VERSION);
+
+            if(welcomelen > e.screen_columns)
+            {
+                welcomelen = e.screen_columns;
+            }
+
+            uint16_t padding = (e.screen_columns - welcomelen) / 2;
+
+            if(padding)
+            {
+                abAppend(ab, "~", 1);
+                padding--;
+            }
+            while(padding--)
+            {
+                abAppend(ab, " ", 1);
+            }
+
+            abAppend(ab, welcome, welcomelen);
+        }
+        else
+        {
         abAppend(ab, "~", 1);
+        }
+
+        abAppend(ab, "\x1b[K", 3);
         if(i < e.screen_rows - 1)
         {
             abAppend(ab, "\r\n", 2);
@@ -146,13 +178,15 @@ void refreshScreen()
 {
     struct abuf ab = ABUF_INIT;
 
-    abAppend(&ab, "\x1b[2J", 4);
+    abAppend(&ab, "\x1b[?25l", 6);
+ //   abAppend(&ab, "\x1b[2J", 4);
     abAppend(&ab, "\x1b[H", 3);
 
     drawRows(&ab);
 
     abAppend(&ab, "\x1b[H", 3);
-    
+    abAppend(&ab, "\x1b[?25h", 6);
+
     write(STDOUT_FILENO, ab.b, ab.len);
     abFree(&ab);
 }
