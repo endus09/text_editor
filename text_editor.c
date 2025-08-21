@@ -17,6 +17,8 @@ struct termios orig_termios;
 // terminal
 void die(const char *s)
 {
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
     perror(s);
     exit(1);
 }
@@ -34,7 +36,7 @@ void rawToggleEnable()
     struct termios raw = orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
-    raw.c_cflag |= ~(CS8);
+    raw.c_cflag |= (CS8);
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     raw.c_cc[VMIN] = 0;
     raw.c_cc[VTIME] = 1;
@@ -50,12 +52,14 @@ char editorReadKey()
     {
         if(nread == -1 && errno != EAGAIN) {die("read");}
     }
+    return c;
 }
 
 // output
 void refreshScreen()
 {
     write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
 // input
@@ -67,8 +71,10 @@ void processKeypress()
     switch(c)
     {
         case CTRL_KEY('q'):
-        exit(0);
-        break;
+            write(STDOUT_FILENO, "\x1b[2J", 4);
+            write(STDOUT_FILENO, "\x1b[H", 3);
+            exit(0);
+            break;
     }
 }
 
