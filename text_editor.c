@@ -63,13 +63,46 @@ char editorReadKey()
     return c;
 }
 
-int getWinSize(int *rows, int *columns)
+int cursorPosition(uint16_t *rows, uint16_t *columns)
+{
+char buf[32];
+
+    if(write(STDOUT_FILENO, "\x1b[6n", 4) != 4) {return -1;}
+
+    for(uint8_t i = 0; i < sizeof(buf) - 1; i++)
+    {
+        if(read(STDIN_FILENO, &buf[i], 1) != 1) {break;}
+        if(buf[i] == 'R') {break;}
+    }
+    buf[sizeof(buf)] = '\0';
+
+    printf("\r\n");
+
+    char c;
+    while(read(STDIN_FILENO, &c, 1) == 1)
+    {
+        if(iscntrl(c))
+        {
+            printf("%d\r\n", c);
+        }
+        else
+        {
+            printf("%d ('%c')\r\n", c, c);
+        }
+    }
+    editorReadKey();
+
+    return -1;
+}
+
+int getWinSize(uint16_t *rows, uint16_t *columns)
 {
     struct winsize ws;
 
-    if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+    if(1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
     {
-        return -1;
+        if(write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) {return -1;}
+        return cursorPosition(rows, columns);
     }
     else
     {
@@ -82,7 +115,7 @@ int getWinSize(int *rows, int *columns)
 // output
 void drawRows()
 {
-    for(uint8_t i = 0; i < e.screen_columns; i++)
+    for(uint8_t i = 0; i < e.screen_rows; i++)
     {
         write(STDOUT_FILENO, "~\r\n", 3);
     }
