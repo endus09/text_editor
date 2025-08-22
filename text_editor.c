@@ -287,21 +287,23 @@ void processKeypress()
             break;
 
         case PAGE_UP:
-            int16_t time = e.screen_rows;
-            while(time--)
             {
-                moveCursor(ARROW_UP);
+                int16_t time = e.screen_rows;
+                while(time--)
+                {
+                    moveCursor(ARROW_UP);
+                }
+                break;
             }
-            break;
-
         case PAGE_DOWN:
-            int16_t tim = e.screen_rows;
-            while(time--)
             {
-                moveCursor(ARROW_DOWN);
+                int16_t time = e.screen_rows;
+                while(time--)
+                {
+                    moveCursor(ARROW_DOWN);
+                }
+                break;
             }
-            break;
-
         case ARROW_UP:
         case ARROW_LEFT:
         case ARROW_DOWN:
