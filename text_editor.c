@@ -21,7 +21,9 @@ enum editor_key
     ARROW_LEFT = 1000,
     ARROW_RIGHT,
     ARROW_UP,
-    ARROW_DOWN
+    ARROW_DOWN,
+    PAGE_UP,
+    PAGE_DOWN
 };
 
 // data
@@ -78,28 +80,48 @@ int32_t editorReadKey()
     {
         char seq[3];
 
-        if(read(STDIN_FILENO, &seq[0],1)!= 1) {return '\x1b';}
-        if(read(STDIN_FILENO, &seq[1],1)!= 1) {return '\x1b';}
+        if(read(STDIN_FILENO, &seq[0], 1)!= 1) {return '\x1b';}
+        if(read(STDIN_FILENO, &seq[1], 1)!= 1) {return '\x1b';}
 
         if(seq[0] == '[')
         {
-            switch(seq[1])
+            if(seq[1] >= '0' && seq[1] <= '9')
             {
-                case 'A':
-                    return ARROW_UP;
-                    break;
-                case 'B':
-                    return ARROW_DOWN;
-                    break;
-                case 'C':
-                    return ARROW_RIGHT;
-                    break;
-                case 'D':
-                    return ARROW_LEFT;
-                    break;
+                if(read(STDIN_FILENO, &seq[2], 1)!= 1) {return '\x1b';}
+                if(seq[2] == '~')
+                {
+                    switch(seq[1])
+                    {
+                        case '5':
+                            return PAGE_UP;
+                            break;
+                        case '6':
+                            return PAGE_DOWN;
+                            break;
+                    }
+                }
             }
-            return '\x1b';
+            else
+            {
+                switch(seq[1])
+                {
+                    case 'A':
+                        return ARROW_UP;
+                        break;
+                    case 'B':
+                        return ARROW_DOWN;
+                        break;
+                    case 'C':
+                        return ARROW_RIGHT;
+                        break;
+                    case 'D':
+                        return ARROW_LEFT;
+                        break;
+                }
+            }
         }
+
+        return '\x1b';
     }
     else {return c;}
 }
@@ -237,16 +259,16 @@ void moveCursor(int32_t key)
     switch(key)
     {
         case ARROW_LEFT:
-            e.cx--;
+            if(e.cx != 0){e.cx--;}
             break;
         case ARROW_RIGHT:
-            e.cx++;
+            if(e.cx != e.screen_columns - 1){e.cx++;}
             break;
         case ARROW_UP:
-            e.cy--;
+            if(e.cy != 0){e.cy--;}
             break;
         case ARROW_DOWN:
-            e.cy++;
+            if(e.cy != e.screen_rows - 1){e.cy++;}
             break;
     }
 }
@@ -263,6 +285,23 @@ void processKeypress()
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
             break;
+
+        case PAGE_UP:
+            int16_t time = e.screen_rows;
+            while(time--)
+            {
+                moveCursor(ARROW_UP);
+            }
+            break;
+
+        case PAGE_DOWN:
+            int16_t tim = e.screen_rows;
+            while(time--)
+            {
+                moveCursor(ARROW_DOWN);
+            }
+            break;
+
         case ARROW_UP:
         case ARROW_LEFT:
         case ARROW_DOWN:
