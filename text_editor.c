@@ -22,6 +22,9 @@ enum editor_key
     ARROW_RIGHT,
     ARROW_UP,
     ARROW_DOWN,
+    DEL_KEY,
+    HOME_KEY,
+    END_KEY,
     PAGE_UP,
     PAGE_DOWN
 };
@@ -92,11 +95,32 @@ int32_t editorReadKey()
                 {
                     switch(seq[1])
                     {
+                        case '1':
+                            return HOME_KEY;
+                            break;
+
+                        case '3':
+                            return DEL_KEY;
+                            break;
+                            
+                        case '4':
+                            return END_KEY;
+                            break;
+
                         case '5':
                             return PAGE_UP;
                             break;
+
                         case '6':
                             return PAGE_DOWN;
+                            break;
+
+                        case '7':
+                            return HOME_KEY;
+                            break;
+
+                        case '8':
+                            return END_KEY;
                             break;
                     }
                 }
@@ -108,16 +132,41 @@ int32_t editorReadKey()
                     case 'A':
                         return ARROW_UP;
                         break;
+
                     case 'B':
                         return ARROW_DOWN;
                         break;
+
                     case 'C':
                         return ARROW_RIGHT;
                         break;
+
                     case 'D':
                         return ARROW_LEFT;
                         break;
+                    
+                    case 'H':
+                        return HOME_KEY;
+                        break;
+
+                    case 'F':
+                        return END_KEY;
+                        break;
                 }
+            }
+        }
+
+        else if(seq[0] == 'O')
+        {
+            switch(seq[1])
+            {
+                case 'H':
+                    return HOME_KEY;
+                    break;
+
+                case 'F':
+                    return END_KEY;
+                    break;
             }
         }
 
@@ -238,7 +287,7 @@ void refreshScreen()
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab, "\x1b[?25l", 6);
- //   abAppend(&ab, "\x1b[2J", 4);
+
     abAppend(&ab, "\x1b[H", 3);
 
     drawRows(&ab);
@@ -284,6 +333,14 @@ void processKeypress()
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
+            break;
+
+        case HOME_KEY:
+            e.cx = 0;
+            break;
+
+        case END_KEY:
+            e.cx = e.screen_columns - 1;
             break;
 
         case PAGE_UP:
