@@ -12,9 +12,17 @@
 #include <string.h>
 
 // defines
-#define TEXT_EDITOR_VERSION "0.0.1"
+#define TEXT_EDITOR_VERSION "MILO --version 0.0.1"
 
 #define CTRL_KEY(k) ((k) & 0x1f)
+
+enum editor_key
+{
+    ARROW_LEFT = 1000,
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN
+};
 
 // data
 struct config
@@ -57,15 +65,43 @@ void rawToggleEnable()
     if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) {die("tcsetattr");};
 }
 
-char editorReadKey()
+int32_t editorReadKey()
 {
-    int64_t nread;
+    int32_t nread;
     char c;
     while((nread = read(STDIN_FILENO, &c, 1)) != 1)
     {
         if(nread == -1 && errno != EAGAIN) {die("read");}
     }
-    return c;
+
+    if(c == '\x1b')
+    {
+        char seq[3];
+
+        if(read(STDIN_FILENO, &seq[0],1)!= 1) {return '\x1b';}
+        if(read(STDIN_FILENO, &seq[1],1)!= 1) {return '\x1b';}
+
+        if(seq[0] == '[')
+        {
+            switch(seq[1])
+            {
+                case 'A':
+                    return ARROW_UP;
+                    break;
+                case 'B':
+                    return ARROW_DOWN;
+                    break;
+                case 'C':
+                    return ARROW_RIGHT;
+                    break;
+                case 'D':
+                    return ARROW_LEFT;
+                    break;
+            }
+            return '\x1b';
+        }
+    }
+    else {return c;}
 }
 
 int cursorPosition(uint16_t *rows, uint16_t *columns)
@@ -86,7 +122,7 @@ int cursorPosition(uint16_t *rows, uint16_t *columns)
     printf("\r\n&buf[1]: '%s'\r\n", &buf[1]);
 
     if(buf[0] != '\x1b' || buf[1] != '[') {return -1;}
-    if(sscanf(&buf[2], "%d;%d", rows, columns) != 2) {return -1;}
+    if(sscanf(&buf[2], "%hu;%hu", rows, columns) != 2) {return -1;}
 
     return 0;
 }
@@ -141,7 +177,7 @@ void drawRows(struct abuf *ab)
         {
             char welcome[80];
             uint16_t welcomelen = snprintf(welcome, sizeof(welcome),
-                "text editor --version %s", TEXT_EDITOR_VERSION);
+                "%s", TEXT_EDITOR_VERSION);
 
             if(welcomelen > e.screen_columns)
             {
@@ -196,9 +232,28 @@ void refreshScreen()
 }
 
 // input
+void moveCursor(int32_t key)
+{
+    switch(key)
+    {
+        case ARROW_LEFT:
+            e.cx--;
+            break;
+        case ARROW_RIGHT:
+            e.cx++;
+            break;
+        case ARROW_UP:
+            e.cy--;
+            break;
+        case ARROW_DOWN:
+            e.cy++;
+            break;
+    }
+}
+
 void processKeypress()
 {
-    char c = editorReadKey();
+    int32_t c = editorReadKey();
     
     printf("%d (%c)",c,c);
     switch(c)
@@ -207,6 +262,12 @@ void processKeypress()
             write(STDOUT_FILENO, "\x1b[2J", 4);
             write(STDOUT_FILENO, "\x1b[H", 3);
             exit(0);
+            break;
+        case ARROW_UP:
+        case ARROW_LEFT:
+        case ARROW_DOWN:
+        case ARROW_RIGHT:
+            moveCursor(c);
             break;
     }
 }
